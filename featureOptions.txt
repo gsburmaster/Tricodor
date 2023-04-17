@@ -1,0 +1,12 @@
+1 Static Probability Static probability of the net.
+2 Transition Probability Activity from 0 to 1.
+3 Controllability Controllability of the net.
+4 Observability Observability of the net.
+5 Fanin Level 1 # of connected inputs at level 1
+6 Fanout Level 1 # of connected outputs at level 1
+7 Fanin Level 2 # of connected inputs at level 2
+8 Fanout Level 2 # of connected outputs at level 2
+9 Nearest FF D Distance of the nearest flip-flop input
+10 Nearest FF Q Distance of the nearest flip-flop output
+11 Min. PI Distance Min. distance from nearest primary input
+12 Min. PO Distance Min. distance from nearest primary output
