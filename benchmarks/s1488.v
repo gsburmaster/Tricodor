@@ -86,12 +86,12 @@ output v13_D_20,v13_D_21,v13_D_16,v13_D_22,v13_D_19,v13_D_18,v13_D_11,v13_D_23,
     C207D,IIII60,C74D,IIII48,C177D,IIII55,C187D,IIII28,C188D,II491,II497,II610,
     II542;
 
-  dff DFF_0(CK,v12,v13_D_5C);
-  dff DFF_1(CK,v11,v13_D_4C);
-  dff DFF_2(CK,v10,v13_D_3C);
-  dff DFF_3(CK,v9,v13_D_2C);
-  dff DFF_4(CK,v8,v13_D_1C);
-  dff DFF_5(CK,v7,v13_D_0C);
+  dff DFF_0(.CK(CK),.Q(v12),.D(v13_D_5C));
+  dff DFF_1(.CK(CK),.Q(v11),.D(v13_D_4C));
+  dff DFF_2(.CK(CK),.Q(v10),.D(v13_D_3C));
+  dff DFF_3(.CK(CK),.Q(v9),.D(v13_D_2C));
+  dff DFF_4(.CK(CK),.Q(v8),.D(v13_D_1C));
+  dff DFF_5(.CK(CK),.Q(v7),.D(v13_D_0C));
   not NOT_0(v0E,v0);
   not NOT_1(v1E,v1);
   not NOT_2(v2E,v2);
