@@ -38,11 +38,11 @@ def closestDFFin(node,DFFinList,circuit,distance):
         fullpaths = pathsbackward + pathsforward
         for path in fullpaths:
             if ((len(path) < distance or distance == -1) and '.D' in dff): 
-                distance = len(path)
+                distance = len(path) -1
             elif ((len(path) < distance or distance == -1) and '.Q' in dff):
-                distance = len(path) +1
+                distance = len(path) 
             elif ((len(path) < distance or distance == -1) and '.CK' in dff):
-                distance = len(path) +1
+                distance = len(path) 
             elif (distance == -1):
                 if '.D' in dff:
                     distance = len(path)
@@ -52,13 +52,13 @@ def closestDFFin(node,DFFinList,circuit,distance):
             if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dff))) > 0)):
                 tmpdistance = len(min(list(circuit.paths(othernode,node)))) + len(min(list(circuit.paths(othernode,dff)))) -1
                 if (tmpdistance < distance):
-                    distance = tmpdistance
+                    distance = tmpdistance -1
     print(node,distance)
     return distance
 
 
 # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-print('paths for output',list(c.paths("G11","DFF_1.D")))
+# print('paths for output',list(c.paths("G11","DFF_1.D")))
 for node in c.nodes():
    closestDFFin(node,DFFList,c,0)
 #gonna do BFS to find nearest 
