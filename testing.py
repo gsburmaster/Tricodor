@@ -4,7 +4,7 @@ dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
 c = cg.from_file('benchmarks/s27.v', blackboxes=dff)
 print(c.nodes())
 def isDFFatall(input):
-    if ".D" in input or '.Q' in input:
+    if ".D" in input or '.Q' or '.CK' in input:
         return True
     return False
 def isDFFin(input):
@@ -33,9 +33,10 @@ def closestDFFin(node,DFFinList,circuit,distance):
         if "G17" in node:
             True
             # print(dff,node,"ha")
-        paths = circuit.paths(node,dff)
-        for path in paths:
-            print(node,path)
+        pathsbackward = list(circuit.paths(node,dff))
+        pathsforward = list(circuit.paths(dff,node))
+        fullpaths = pathsbackward + pathsforward
+        for path in fullpaths:
             if ((len(path) < distance or distance == -1) and '.D' in dff): 
                 distance = len(path)
             elif ((len(path) < distance or distance == -1) and '.Q' in dff):
@@ -47,14 +48,18 @@ def closestDFFin(node,DFFinList,circuit,distance):
                     distance = len(path)
                 else:
                     distance = len(path) +1
+        for othernode in circuit.nodes():
+            if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dff))) > 0)):
+                tmpdistance = len(min(list(circuit.paths(othernode,node)))) + len(min(list(circuit.paths(othernode,dff)))) -1
+                if (tmpdistance < distance):
+                    distance = tmpdistance
     print(node,distance)
     return distance
 
 
 # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-
+print('paths for output',list(c.paths("G11","DFF_1.D")))
 for node in c.nodes():
-#    print(cg.props.sensitivity(cg.tx.strip_blackboxes(c),node))
    closestDFFin(node,DFFList,c,0)
 #gonna do BFS to find nearest 
 
