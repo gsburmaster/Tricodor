@@ -1,7 +1,41 @@
 import circuitgraph as cg
+import pandas as pd
+
 dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
 c = cg.from_file('benchmarks/s27.v', blackboxes=dff)
-print(c.nodes())
+#print(c.nodes())
+
+def extractFeatures(cg):
+    features=["f1", "f2", "f3", "f4","f5","f6","f7","f8","f9","f10"]
+    nodes = cg.topo_sort()
+    df = pd.DataFrame(index=features)
+
+    for node in nodes:
+        temp = []
+
+        #extract feature
+        temp.append(0) #append return value
+        temp.append(1)
+        #extract feature
+        temp.append(2) #append return value ect..
+        temp.append(3)
+        temp.append(4)
+        temp.append(5)
+        temp.append(6)
+        temp.append(7)
+        temp.append(8)
+        temp.append(9)
+
+        df[node] = temp
+
+    print(df)
+    print(df.T)
+    df = df.T
+    df.to_csv(path_or_buf='test.xlsx', sep=',')
+
+    return
+
+
 
 # this takes one array of all dff ports and sorts into multiple arrays of each dff (so an array of DFF_1, an array of DFF_2, etc)
 def sortDFFs(dfflistin):
