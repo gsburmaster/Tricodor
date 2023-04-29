@@ -6,34 +6,69 @@ c = cg.from_file('benchmarks/s27.v', blackboxes=dff)
 #print(c.nodes())
 
 def extractFeatures(cg):
-    features=["f1", "f2", "f3", "f4","f5","f6","f7","f8","f9","f10"]
+    features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","f5","f6","f7","f8","f9","f10"]
     nodes = cg.topo_sort()
     df = pd.DataFrame(index=features)
 
     for node in nodes:
         temp = []
 
-        #extract feature
-        temp.append(0) #append return value
-        temp.append(1)
-        #extract feature
-        temp.append(2) #append return value ect..
-        temp.append(3)
+        #print(node)
+
+        fanInVals = getFanIn(node, cg)
+        temp.append(fanInVals[0]) #append fanInL1
+        temp.append(fanInVals[1]) #append fanInL2
+        fanOutVals = getFanOut(node, cg)
+        temp.append(fanOutVals[0]) #append fanOutL1
+        temp.append(fanOutVals[1]) #append fanOutL2
         temp.append(4)
         temp.append(5)
         temp.append(6)
         temp.append(7)
         temp.append(8)
         temp.append(9)
+        
 
         df[node] = temp
 
-    print(df)
-    print(df.T)
+    #print(df)
+    #print(df.T)
     df = df.T
-    df.to_csv(path_or_buf='test.xlsx', sep=',')
+    df.to_csv(path_or_buf='test.csv', sep=',') #put the data frame into a csv file, comma delim value
 
     return
+
+
+#both fan out/in functions return a list, first value is the L1 fan in/out, second value is the L2 fan in/out
+def getFanOut(node, cg):
+    values = [] #get first and second level fanout, put into this values list
+    outList = list(cg.fanout(node)) #fan functions give set of node, cast to list
+
+    values.append(len(outList)) #put the length of the L1 list into values
+
+    temp = 0 
+    for net in outList: #loop through list of L1 nodes, get there fan length, add to temp count
+        temp = temp + len(list(cg.fanout(net)))
+        
+    values.append(temp) #put count of L2 into the list we are returning
+
+    return values
+
+def getFanIn(node, cg):
+    values = [] #get first and second level fanin, put into this values list
+    inList = list(cg.fanin(node))
+
+    values.append(len(inList))
+
+    temp = 0
+    for net in inList:
+        temp = temp + len(list(cg.fanin(net)))
+        
+    values.append(temp)
+
+    return values
+    
+
 
 
 
@@ -161,3 +196,4 @@ for node in c.nodes():
 #    closestDFFout(node,DFFList,c)
 #    closestInput(node,c,DFFList)
 
+extractFeatures(c)
