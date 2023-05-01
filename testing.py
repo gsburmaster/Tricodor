@@ -21,7 +21,8 @@ def extractFeatures(cg):
         fanOutVals = getFanOut(node, cg)
         temp.append(fanOutVals[0]) #append fanOutL1
         temp.append(fanOutVals[1]) #append fanOutL2
-        temp.append(4)
+        statProb = getStaticProb(node, cg)
+        temp.append(statProb) #append stat prob
         temp.append(5)
         temp.append(6)
         temp.append(7)
@@ -38,6 +39,13 @@ def extractFeatures(cg):
 
     return
 
+
+def getStaticProb(node, c):
+    prob = cg.props.signal_probability(c, node, approx=False)
+
+    print(prob)
+
+    return -1
 
 #both fan out/in functions return a list, first value is the L1 fan in/out, second value is the L2 fan in/out
 def getFanOut(node, cg):
