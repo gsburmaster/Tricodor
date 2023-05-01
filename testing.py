@@ -21,14 +21,13 @@ def extractFeatures(cg):
         fanOutVals = getFanOut(node, cg)
         temp.append(fanOutVals[0]) #append fanOutL1
         temp.append(fanOutVals[1]) #append fanOutL2
-        statProb = getStaticProb(node, cg)
-        temp.append(statProb) #append stat prob
+        temp.append(4)
         temp.append(5)
         temp.append(6)
         temp.append(7)
         temp.append(8)
         temp.append(9)
-        
+
 
         df[node] = temp
 
@@ -40,12 +39,6 @@ def extractFeatures(cg):
     return
 
 
-def getStaticProb(node, c):
-    prob = cg.props.signal_probability(c, node, approx=False)
-
-    print(prob)
-
-    return -1
 
 #both fan out/in functions return a list, first value is the L1 fan in/out, second value is the L2 fan in/out
 def getFanOut(node, cg):
@@ -54,10 +47,10 @@ def getFanOut(node, cg):
 
     values.append(len(outList)) #put the length of the L1 list into values
 
-    temp = 0 
+    temp = 0
     for net in outList: #loop through list of L1 nodes, get there fan length, add to temp count
         temp = temp + len(list(cg.fanout(net)))
-        
+
     values.append(temp) #put count of L2 into the list we are returning
 
     return values
@@ -71,11 +64,11 @@ def getFanIn(node, cg):
     temp = 0
     for net in inList:
         temp = temp + len(list(cg.fanin(net)))
-        
+
     values.append(temp)
 
     return values
-    
+
 
 
 
@@ -125,12 +118,12 @@ def closestDFFin(node,DFFinList,circuit):
         pathsforward = list(circuit.paths(dff,node))
         fullpaths = pathsbackward + pathsforward
         for path in fullpaths:
-            if ((len(path) < distance or distance == -1) and '.D' in dff): 
+            if ((len(path) < distance or distance == -1) and '.D' in dff):
                 distance = len(path) -1
             elif ((len(path) < distance or distance == -1) and '.Q' in dff):
-                distance = len(path) 
+                distance = len(path)
             elif ((len(path) < distance or distance == -1) and '.CK' in dff):
-                distance = len(path) 
+                distance = len(path)
             elif (distance == -1):
                 if '.D' in dff:
                     distance = len(path)
@@ -158,12 +151,12 @@ def closestDFFout(node,DFFinList,circuit):
         pathsforward = list(circuit.paths(dff,node))
         fullpaths = pathsbackward + pathsforward
         for path in fullpaths:
-            if ((len(path) < distance or distance == -1) and '.Q' in dff): 
+            if ((len(path) < distance or distance == -1) and '.Q' in dff):
                 distance = len(path) -1
             elif ((len(path) < distance or distance == -1) and '.D' in dff):
-                distance = len(path) 
+                distance = len(path)
             elif ((len(path) < distance or distance == -1) and '.CK' in dff):
-                distance = len(path) 
+                distance = len(path)
             elif (distance == -1):
                 if '.Q' in dff:
                     distance = len(path)
@@ -193,9 +186,9 @@ def closestInput(node,circuit,dfflist):
             doubleLoopTmp = -1
             for dffPort in dffArr:
                 fastestPath = min(list(circuit.paths(node,dffPort)))
-                
 
-            
+
+
 sortDFFs(DFFList)
 # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
 # print('paths for output',list(c.paths("G11","DFF_1.D")))
