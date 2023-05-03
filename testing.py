@@ -1,11 +1,9 @@
 import circuitgraph as cg
 import pandas as pd
 
-dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
-c = cg.from_file('benchmarks/s27.v', blackboxes=dff)
-#print(c.nodes())
 
-def extractFeatures(cg):
+
+def extractFeatures(cg, file_name):
     features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","f5","f6","f7","f8","f9","f10"]
     nodes = cg.topo_sort()
     df = pd.DataFrame(index=features)
@@ -34,7 +32,7 @@ def extractFeatures(cg):
     #print(df)
     #print(df.T)
     df = df.T
-    df.to_csv(path_or_buf='test.csv', sep=',') #put the data frame into a csv file, comma delim value
+    df.to_csv(path_or_buf='./parsed_nets/' + v_file + '.csv', sep=',') #put the data frame into a csv file, comma delim value
 
     return
 
@@ -100,9 +98,7 @@ def isDFFout(input):
     if ".Q" in input:
         return True
     return False
-DFFinList = list(filter(isDFFin,c.nodes()))
-DFFoutList = list(filter(isDFFout,c.nodes()))
-DFFList = list(filter(isDFFatall,c.nodes()))
+
 #https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/#
 def closestDFFin(node,DFFinList,circuit):
     # print('about to print dfflist')
@@ -189,12 +185,30 @@ def closestInput(node,circuit,dfflist):
 
 
 
-sortDFFs(DFFList)
-# print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-# print('paths for output',list(c.paths("G11","DFF_1.D")))
-for node in c.nodes():
-   closestDFFin(node,DFFList,c)
-#    closestDFFout(node,DFFList,c)
-#    closestInput(node,c,DFFList)
+dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
+v_file = input("Enter verilog file name (don't add .v extension): ")
+path = 'benchmarks/'
+path += v_file
 
-extractFeatures(c)
+
+
+try:
+    c = cg.from_file(path + '.v', blackboxes=dff)
+    #print(c.nodes())
+    DFFinList = list(filter(isDFFin,c.nodes()))
+    DFFoutList = list(filter(isDFFout,c.nodes()))
+    DFFList = list(filter(isDFFatall,c.nodes()))
+
+    sortDFFs(DFFList)
+    # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
+    # print('paths for output',list(c.paths("G11","DFF_1.D")))
+    for node in c.nodes():
+        closestDFFin(node,DFFList,c)
+    #    closestDFFout(node,DFFList,c)
+    #    closestInput(node,c,DFFList)
+
+    extractFeatures(c, v_file)
+except:
+    print(path + " could not be opened")
+
+
