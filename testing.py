@@ -131,7 +131,7 @@ def closestDFFin(node,DFFinList,circuit):
                     distance = len(path) +1
         for othernode in circuit.nodes():
             if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dff))) > 0)):
-                tmpdistance = len(min(list(circuit.paths(othernode,node)))) + len(min(list(circuit.paths(othernode,dff)))) -1
+                tmpdistance = len(min(list(circuit.paths(othernode,node)))) + len(min(list(circuit.paths(othernode,dff)))) -2
                 if (tmpdistance < distance):
                     distance = tmpdistance -1
     # print(node,distance)
@@ -164,7 +164,7 @@ def closestDFFout(node,DFFinList,circuit):
                     distance = len(path) +1
         for othernode in circuit.nodes():
             if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dff))) > 0)):
-                tmpdistance = len(min(list(circuit.paths(othernode,node)))) + len(min(list(circuit.paths(othernode,dff)))) -1
+                tmpdistance = len(min(list(circuit.paths(othernode,node)))) + len(min(list(circuit.paths(othernode,dff)))) -2
                 if (tmpdistance < distance):
                     distance = tmpdistance -1
     # print(node,distance)
@@ -181,15 +181,21 @@ def closestInput(node,circuit,dfflist):
             path = min(paths)
             if (distance == -1) or (len(path) -1 < distance):
                 distance = len(path)-1
+        dffFinalStack = []
         for dffArr in dffsortedlist:
             #need to check distance of each path- one dff could be shorter to, but longer after vs another that is medium on both.
             doubleLoopTmp = -1
+            fastestPathToNode = [] #we need: path from input to DFF and then path from other DFF port to node we want (or from other node to node we want and to other DFF port)
+            arrayofpaths = []
             for dffPort in dffArr:
-                fastestPath = min(list(circuit.paths(node,dffPort)))
+                if (arrayofpaths == []):
+                    fastestPathToDFF = min(list(circuit.paths(input,dffPort)))
+                    arrayofpaths.append(fastestPathToDFF)
+                else:
+                    True
 
 
 
-sortDFFs(DFFList)
 # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
 # print('paths for output',list(c.paths("G11","DFF_1.D")))
 for node in c.nodes():
@@ -197,4 +203,4 @@ for node in c.nodes():
 #    closestDFFout(node,DFFList,c)
 #    closestInput(node,c,DFFList)
 
-extractFeatures(c)
+# extractFeatures(c)
