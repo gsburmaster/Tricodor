@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def extractFeatures(cg, file_name):
-    features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","f5","f6","f7","f8","f9","f10"]
+    features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Controllability","Observability"]
     nodes = cg.topo_sort()
     df = pd.DataFrame(index=features)
 
@@ -19,8 +19,17 @@ def extractFeatures(cg, file_name):
         fanOutVals = getFanOut(node, cg)
         temp.append(fanOutVals[0]) #append fanOutL1
         temp.append(fanOutVals[1]) #append fanOutL2
-        temp.append(4)
-        temp.append(5)
+
+        DFFinList = list(filter(isDFFin,c.nodes()))
+        DFFoutList = list(filter(isDFFout,c.nodes()))
+        DFFList = list(filter(isDFFatall,c.nodes()))
+
+        sortDFFs(DFFList)
+        # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
+        # print('paths for output',list(c.paths("G11","DFF_1.D")))
+
+        temp.append(closestDFFin(node,DFFinList,c))
+        temp.append(closestDFFout(node,DFFoutList,c))
         temp.append(6)
         temp.append(7)
         temp.append(8)
@@ -194,18 +203,6 @@ path += v_file
 
 try:
     c = cg.from_file(path + '.v', blackboxes=dff)
-    #print(c.nodes())
-    DFFinList = list(filter(isDFFin,c.nodes()))
-    DFFoutList = list(filter(isDFFout,c.nodes()))
-    DFFList = list(filter(isDFFatall,c.nodes()))
-
-    sortDFFs(DFFList)
-    # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-    # print('paths for output',list(c.paths("G11","DFF_1.D")))
-    for node in c.nodes():
-        closestDFFin(node,DFFList,c)
-    #    closestDFFout(node,DFFList,c)
-    #    closestInput(node,c,DFFList)
 
     extractFeatures(c, v_file)
 except:
