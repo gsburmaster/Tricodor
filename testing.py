@@ -8,36 +8,49 @@ import re
 
 
 
-def extractFeatures(cg, file_name):
-    features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Controllability","Observability"]
-    nodes = cg.topo_sort()
+def extractFeatures(circuitIn, file_name, blackboxIn):
+    features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Static Probability","(broken)Observability"]
+    nodes = circuitIn.topo_sort()
     df = pd.DataFrame(index=features)
-
+    file = open(file_name + ".v","r")
+    BBtext = file.read() # for some reason this is the way that this works
+    file.close()
+    NoBBtext = re.sub(r"dff (\w+)\(\.CK\((\w+)\),\.Q\((\w+)\),\.D\((\w+)\)\);",r"buf \1(\3,\4);",BBtext)
+    NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
+    print(NoBBtext)
+    circuitIn2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,blackboxIn)
     for node in nodes:
         temp = []
 
         #print(node)
-
-        fanInVals = getFanIn(node, cg)
+        
+        fanInVals = getFanIn(node, circuitIn)
         temp.append(fanInVals[0]) #append fanInL1
         temp.append(fanInVals[1]) #append fanInL2
-        fanOutVals = getFanOut(node, cg)
+        fanOutVals = getFanOut(node, circuitIn)
         temp.append(fanOutVals[0]) #append fanOutL1
         temp.append(fanOutVals[1]) #append fanOutL2
 
-        DFFinList = list(filter(isDFFin,c.nodes()))
-        DFFoutList = list(filter(isDFFout,c.nodes()))
-        DFFList = list(filter(isDFFatall,c.nodes()))
+        DFFinList = list(filter(isDFFin,circuitIn.nodes()))
+        DFFoutList = list(filter(isDFFout,circuitIn.nodes()))
+        DFFList = list(filter(isDFFatall,circuitIn.nodes()))
 
         sortDFFs(DFFList)
         # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
         # print('paths for output',list(c.paths("G11","DFF_1.D")))
-
-        temp.append(closestDFFin(node,DFFinList,c))
-        temp.append(closestDFFout(node,DFFoutList,c))
-        temp.append(closestInput(node,c,DFFList))
-        temp.append(closestOutput(node,c,DFFList))
-        temp.append(8)
+        
+        temp.append(closestDFFin(node,DFFinList,circuitIn))
+        temp.append(closestDFFout(node,DFFoutList,circuitIn))
+        temp.append(closestInput(node,circuitIn,DFFList))
+        temp.append(closestOutput(node,circuitIn,DFFList))
+        
+        if (len(DFFList) <= 0):
+            temp.append(cg.props.signal_probability(circuitIn,node,False))
+        else:
+            if (node in circuitIn2.nodes()):
+                temp.append(cg.props.signal_probability(circuitIn2,node,False))
+            else:
+                temp.append(-1)
         temp.append(9)
 
 
@@ -288,28 +301,17 @@ v_file = input("Enter verilog file name (don't add .v extension): ")
 path = 'benchmarks/'
 path += v_file
 
+c = cg.from_file(path + '.v', blackboxes=dff)
+extractFeatures(c,path,dff)
+
+# try:
+#     c = cg.from_file(path + '.v', blackboxes=dff)
+#     extractFeatures(c,path)
+# except:
+#     print(path + ".v could not be opened")
 
 
-try:
-    c = cg.from_file(path + '.v', blackboxes=dff)
-    
-except:
-    print(path + " could not be opened")
 
-
-file = open(path + ".v","r")
-BBtext = file.read()
-# print(BBtext)
-# print("delimiter\n\n\n\n")
-NoBBtext = re.sub(r"dff (\w+)\(\.CK\((\w+)\),\.Q\((\w+)\),\.D\((\w+)\)\);",r"buf \1(\3,\4);",BBtext)
-NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
-# print(NoBBtext)
-c2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,dff)
-
-print(cg.props.influence(c2,c2.nodes(),False,False))
-
-
-DFFList = list(filter(isDFFatall,c.nodes()))
 
 # for node in c.nodes():
 #     closestInput(node,c,DFFList)
