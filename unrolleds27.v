@@ -1,0 +1,58 @@
+module s27 (G2, CK, G3, DFF_0_Q, DFF_1_Q, G1, G0, DFF_2_Q, DFF_0_CK, DFF_1_CK, DFF_0_D, DFF_2_D, DFF_2_CK, DFF_1_D, G17);
+  input G2;
+  input CK;
+  input G3;
+  input DFF_0_Q;
+  input DFF_1_Q;
+  input G1;
+  input G0;
+  input DFF_2_Q;
+
+  output DFF_0_CK;
+  output DFF_1_CK;
+  output DFF_0_D;
+  output DFF_2_D;
+  output DFF_2_CK;
+  output DFF_1_D;
+  output G17;
+
+  wire G15;
+  wire DFF_1_CK;
+  wire G5;
+  wire G10;
+  wire DFF_0_D;
+  wire G7;
+  wire G13;
+  wire G9;
+  wire G8;
+  wire G6;
+  wire DFF_2_D;
+  wire DFF_1_D;
+  wire G17;
+  wire G12;
+  wire G16;
+  wire DFF_2_CK;
+  wire DFF_0_CK;
+  wire G14;
+  wire G11;
+
+  or g_0 (G15, G12, G8);
+  buf g_1 (DFF_1_CK, CK);
+  buf g_2 (G5, DFF_0_Q);
+  nor g_3 (G10, G14, G11);
+  buf g_4 (DFF_0_D, G10);
+  buf g_5 (G7, DFF_2_Q);
+  nor g_6 (G13, G2, G12);
+  nand g_7 (G9, G16, G15);
+  and g_8 (G8, G6, G14);
+  buf g_9 (G6, DFF_1_Q);
+  buf g_10 (DFF_2_D, G13);
+  buf g_11 (DFF_1_D, G11);
+  not g_12 (G17, G11);
+  nor g_13 (G12, G7, G1);
+  or g_14 (G16, G3, G8);
+  buf g_15 (DFF_2_CK, CK);
+  buf g_16 (DFF_0_CK, CK);
+  not g_17 (G14, G0);
+  nor g_18 (G11, G5, G9);
+endmodule

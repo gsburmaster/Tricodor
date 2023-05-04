@@ -1,5 +1,10 @@
 import circuitgraph as cg
 import pandas as pd
+import re
+
+
+
+
 
 
 
@@ -30,8 +35,8 @@ def extractFeatures(cg, file_name):
 
         temp.append(closestDFFin(node,DFFinList,c))
         temp.append(closestDFFout(node,DFFoutList,c))
-        temp.append(6)
-        temp.append(7)
+        temp.append(closestInput(node,c,DFFList))
+        temp.append(closestOutput(node,c,DFFList))
         temp.append(8)
         temp.append(9)
 
@@ -175,29 +180,106 @@ def closestDFFout(node,DFFinList,circuit):
     # print(node,distance)
     return distance
 
+def closestOutput(node,circuit,dfflist):
+    dffsortedlist = sortDFFs(dfflist)
+    outputs = list(circuit.outputs())
+    distance = -1
+    outputthatwon = ""
+    pathwin = []
+    if (node in outputs):
+        distance = 0
+        outputthatwon = node
+        pathwin = [node]
+    if (node in dfflist):
+        possibleoutPaths = []
+        minInputPath = []
+        for output in outputs:
+            for othernode in c.nodes():
+                if (len(list(circuit.paths(othernode,node))) > 0 and (len(list(circuit.paths(othernode,output))) > 0)):
+                    possibleoutPaths.append(list(set(min(circuit.paths(othernode,node))).union( set(min(circuit.paths(othernode,output))))))
+                if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
+                    minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
+                    if ((minLength < distance) or distance == -1) and minLength > 0:
+                        outputthatwon = output
+                        distance = minLength
+                        pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
+    for output in outputs:
+        paths = list(circuit.paths(node,output))
+        if (len(paths) > 0):
+            path = min(paths)
+            if (distance == -1) or (len(path) -1 < distance):
+                distance = len(path)
+                outputthatwon = output
+                pathwin= path
+        dffFinalStack = []
+        for dffArr in dffsortedlist:
+            minInputPath = []
+            possibleoutPaths = []
+            for dffPort in dffArr: #now we have min path to dff
+                if (len(list(circuit.paths(node,dffPort))) > 0) and ".D" in dffPort:
+                    minInputPath.append(min(list(circuit.paths(node,dffPort))))
+                if (".Q" in dffPort):
+                    for othernode in c.nodes():
+                        if (len(list(circuit.paths(dffPort,output))) > 0):
+                            possibleoutPaths.append(min(list(circuit.paths(dffPort,output))))
+            if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
+                minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
+                if ((minLength < distance) or distance == -1) and minLength > 0:
+                    outputthatwon = output
+                    distance = minLength
+                    pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
+    print("node:",node,"winning output: ",outputthatwon,"len: ", distance, "path: ", pathwin)
+    return distance
+
 
 def closestInput(node,circuit,dfflist):
     dffsortedlist = sortDFFs(dfflist)
     inputs = list(circuit.inputs())
     distance = -1
+    inputthatwon = ""
+    pathwin = []
+    if (node in inputs):
+        distance = 0
+        inputthatwon = node
+        pathwin = [node]
+    if (node in dfflist):
+        if (".CK" in node):
+            distance = 1
+            inputthatwon = 'CK'
+            pathwin = [node,"CK"]
+        else:
+            distance = 2
+            inputthatwon = "CK"
+            pathwin = [node,"The clock port for a dff","CK"]
     for input in inputs:
         paths = list(circuit.paths(input,node))
         if (len(paths) > 0):
             path = min(paths)
             if (distance == -1) or (len(path) -1 < distance):
-                distance = len(path)-1
+                distance = len(path)
+                inputthatwon = input
+                pathwin= path
         dffFinalStack = []
         for dffArr in dffsortedlist:
-            #need to check distance of each path- one dff could be shorter to, but longer after vs another that is medium on both.
-            doubleLoopTmp = -1
-            fastestPathToNode = [] #we need: path from input to DFF and then path from other DFF port to node we want (or from other node to node we want and to other DFF port)
-            arrayofpaths = []
+            minInputPath = []
+            possibleoutPaths = []
+            for dffPort in dffArr: #now we have min path to dff
+                if (len(list(circuit.paths(input,dffPort))) > 0):
+                    minInputPath.append(min(list(circuit.paths(input,dffPort))))
             for dffPort in dffArr:
-                if (arrayofpaths == []):
-                    fastestPathToDFF = min(list(circuit.paths(input,dffPort)))
-                    arrayofpaths.append(fastestPathToDFF)
-                else:
-                    True
+                if(len(list(circuit.paths(node,dffPort))) > 0):
+                    possibleoutPaths.append(min(list(circuit.paths(node,dffPort) ) ) )
+                for othernode in circuit.nodes():
+                    if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dffPort))) > 0)):
+                        possibleoutPaths.append(list(set(min(circuit.paths(othernode,node))).union( set(min(circuit.paths(othernode,dffPort))))))
+            if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
+                minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
+                if ((minLength < distance) or distance == -1) and minLength > 0:
+                    inputthatwon = input
+                    distance = minLength
+                    pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
+    print("node:",node,"winning Input: ",inputthatwon,"len: ", distance, "path: ", pathwin)
+    return distance
 
 
 
@@ -210,9 +292,26 @@ path += v_file
 
 try:
     c = cg.from_file(path + '.v', blackboxes=dff)
-
-    extractFeatures(c, v_file)
+    
 except:
     print(path + " could not be opened")
 
 
+file = open(path + ".v","r")
+BBtext = file.read()
+# print(BBtext)
+# print("delimiter\n\n\n\n")
+NoBBtext = re.sub(r"dff (\w+)\(\.CK\((\w+)\),\.Q\((\w+)\),\.D\((\w+)\)\);",r"buf \1(\3,\4);",BBtext)
+NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
+# print(NoBBtext)
+c2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,dff)
+
+print(cg.props.influence(c2,c2.nodes(),False,False))
+
+
+DFFList = list(filter(isDFFatall,c.nodes()))
+
+# for node in c.nodes():
+#     closestInput(node,c,DFFList)
+#     closestOutput(node,c,DFFList)
+    # extractFeatures(c, v_file)
