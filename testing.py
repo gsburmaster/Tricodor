@@ -1,7 +1,7 @@
 import circuitgraph as cg
 import pandas as pd
 import re
-import multiprocessing as mp
+
 
 
 
@@ -10,22 +10,18 @@ import multiprocessing as mp
 
 def extractFeatures(circuitIn, file_name, blackboxIn):
     features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Static Probability","(broken)Observability"]
-    print('runnning with',file_name)
     nodes = circuitIn.topo_sort()
     df = pd.DataFrame(index=features)
-    filepath = "benchmarks/"
-    if ("c" in file_name):
-        filepath += "labeled_nets/"
-    file = open(filepath + file_name + ".v","r")
+    file = open(file_name + ".v","r")
     BBtext = file.read() # for some reason this is the way that this works
     file.close()
     NoBBtext = re.sub(r"dff (\w+)\(\.CK\((\w+)\),\.Q\((\w+)\),\.D\((\w+)\)\);",r"buf \1(\3,\4);",BBtext)
     NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
-    # print(NoBBtext)
+    print(NoBBtext)
     circuitIn2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,blackboxIn)
     for node in nodes:
         temp = []
-        print('node',node,file_name)
+
         #print(node)
         
         fanInVals = getFanIn(node, circuitIn)
@@ -63,7 +59,7 @@ def extractFeatures(circuitIn, file_name, blackboxIn):
     #print(df)
     #print(df.T)
     df = df.T
-    df.to_csv(path_or_buf='./parsed_nets/' + file_name + '.csv', sep=',') #put the data frame into a csv file, comma delim value
+    df.to_csv(path_or_buf='./parsed_nets/' + v_file + '.csv', sep=',') #put the data frame into a csv file, comma delim value
 
     return
 
@@ -245,7 +241,7 @@ def closestOutput(node,circuit,dfflist):
                     outputthatwon = output
                     distance = minLength
                     pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
-    # print("node:",node,"winning output: ",outputthatwon,"len: ", distance, "path: ", pathwin)
+    print("node:",node,"winning output: ",outputthatwon,"len: ", distance, "path: ", pathwin)
     return distance
 
 
@@ -301,30 +297,13 @@ def closestInput(node,circuit,dfflist):
 
 
 dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
-# v_file = input("Enter verilog file name (don't add .v extension): ")
+v_file = input("Enter verilog file name (don't add .v extension): ")
 path = 'benchmarks/'
-# path += v_file
+path += v_file
 
-files = ["s420","s641","s713","s1238","c482","c1980","c6288"]
+c = cg.from_file(path + '.v', blackboxes=dff)
+extractFeatures(c,path,dff)
 
-
-
-def featureDriver(prepathName):
-    dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
-    path = 'benchmarks/'
-    if ('c' in prepathName):
-        path += "labeled_nets/"
-    filepath = path + prepathName
-    c = cg.from_file(filepath + '.v', blackboxes=dff)
-    extractFeatures(c,prepathName,dff)
-
-if __name__ == '__main__':
-    pool = mp.Pool()
-    pool = mp.Pool(mp.cpu_count()-2)
-    outputs = pool.map(featureDriver,files)
-
-
-print("finished")
 # try:
 #     c = cg.from_file(path + '.v', blackboxes=dff)
 #     extractFeatures(c,path)
