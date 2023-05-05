@@ -77,9 +77,10 @@ def extractFeatures(circuitIn, file_name, blackboxIn):
         for output in outputs:
             rows.append(output[1])
             data.append(output[0])
-
         df = pd.DataFrame(data,index=rows,columns=features)
-        df.to_csv(path_or_buf='./parsed_nets/' + file_name + 'test.csv', sep=',') #put the data frame into a csv file, comma delim value
+        df.to_csv(path_or_buf='./parsed_nets/' + file_name + '.csv', sep=',') #put the data frame into a csv file, comma delim value
+        pool.close()
+        pool.join()
     
     # for node in nodes:
     #     temp = []
@@ -363,8 +364,8 @@ dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
 path = 'benchmarks/'
 # path += v_file
 
-# files = ["s420","s641","s713","s1238","c482","c1980","c6288"]
-files = ["s27"]
+files = ["s27","s420","s641","s713","s1238","c482","c1980","c6288"]
+# files = ["s27"]
 
 
 def featureDriver(prepathName):
