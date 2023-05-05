@@ -2,17 +2,50 @@ import circuitgraph as cg
 import pandas as pd
 import re
 import multiprocessing as mp
+import pdb
 
 
+def multithreadedNodes(node,inputArr): #[circuitIn,circuitIn2,file_name,nodes]
+    temp = []
+    print('node',node,inputArr[2])
+    #print(node)
+    
+    fanInVals = getFanIn(node, inputArr[0])
+    temp.append(fanInVals[0]) #append fanInL1
+    temp.append(fanInVals[1]) #append fanInL2
+    fanOutVals = getFanOut(node, inputArr[0])
+    temp.append(fanOutVals[0]) #append fanOutL1
+    temp.append(fanOutVals[1]) #append fanOutL2
 
+    DFFinList = list(filter(isDFFin,inputArr[0].nodes()))
+    DFFoutList = list(filter(isDFFout,inputArr[0].nodes()))
+    DFFList = list(filter(isDFFatall,inputArr[0].nodes()))
 
+    sortDFFs(DFFList)
+    # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
+    # print('paths for output',list(c.paths("G11","DFF_1.D")))
+    
+    temp.append(closestDFFin(node,DFFinList,inputArr[0]))
+    temp.append(closestDFFout(node,DFFoutList,inputArr[0]))
+    temp.append(closestInput(node,inputArr[0],DFFList))
+    temp.append(closestOutput(node,inputArr[0],DFFList))
+    
+    if (len(DFFList) <= 0):
+        temp.append(cg.props.signal_probability(inputArr[0],node,False))
+    else:
+        if (node in inputArr[1].nodes()):
+            temp.append(cg.props.signal_probability(inputArr[1],node,False))
+        else:
+            temp.append(-1)
+    temp.append(9)
+    return [temp,node]
 
 
 def extractFeatures(circuitIn, file_name, blackboxIn):
     features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Static Probability","(broken)Observability"]
     print('runnning with',file_name)
     nodes = circuitIn.topo_sort()
-    df = pd.DataFrame(index=features)
+    
     filepath = "benchmarks/"
     if ("c" in file_name):
         filepath += "labeled_nets/"
@@ -23,47 +56,72 @@ def extractFeatures(circuitIn, file_name, blackboxIn):
     NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
     # print(NoBBtext)
     circuitIn2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,blackboxIn)
+
+    inputArrForFunction = [circuitIn,circuitIn2,file_name]
+    thingtoadd = []
     for node in nodes:
-        temp = []
-        print('node',node,file_name)
-        #print(node)
+        thingtoadd.append(inputArrForFunction)
+    # print(thingtoadd, "thing to add")
+    nodeList = list(circuitIn.nodes())
+    # print(list(nodeList),"nodes")
+    nodeArgArr = []
+    for node in nodeList:
+        nodeArgArr.append((node,inputArrForFunction))
+    
+    if __name__ == '__main__':
+        pool = mp.Pool(mp.cpu_count()-2)
+        outputs = pool.starmap(multithreadedNodes,nodeArgArr)
+        print(outputs)
+        rows = [] 
+        data = []
+        for output in outputs:
+            rows.append(output[1])
+            data.append(output[0])
+
+        df = pd.DataFrame(data,index=rows,columns=features)
+        df.to_csv(path_or_buf='./parsed_nets/' + file_name + 'test.csv', sep=',') #put the data frame into a csv file, comma delim value
+    
+    # for node in nodes:
+    #     temp = []
+    #     print('node',node,file_name)
+    #     #print(node)
         
-        fanInVals = getFanIn(node, circuitIn)
-        temp.append(fanInVals[0]) #append fanInL1
-        temp.append(fanInVals[1]) #append fanInL2
-        fanOutVals = getFanOut(node, circuitIn)
-        temp.append(fanOutVals[0]) #append fanOutL1
-        temp.append(fanOutVals[1]) #append fanOutL2
+    #     fanInVals = getFanIn(node, circuitIn)
+    #     temp.append(fanInVals[0]) #append fanInL1
+    #     temp.append(fanInVals[1]) #append fanInL2
+    #     fanOutVals = getFanOut(node, circuitIn)
+    #     temp.append(fanOutVals[0]) #append fanOutL1
+    #     temp.append(fanOutVals[1]) #append fanOutL2
 
-        DFFinList = list(filter(isDFFin,circuitIn.nodes()))
-        DFFoutList = list(filter(isDFFout,circuitIn.nodes()))
-        DFFList = list(filter(isDFFatall,circuitIn.nodes()))
+    #     DFFinList = list(filter(isDFFin,circuitIn.nodes()))
+    #     DFFoutList = list(filter(isDFFout,circuitIn.nodes()))
+    #     DFFList = list(filter(isDFFatall,circuitIn.nodes()))
 
-        sortDFFs(DFFList)
-        # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-        # print('paths for output',list(c.paths("G11","DFF_1.D")))
+    #     sortDFFs(DFFList)
+    #     # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
+    #     # print('paths for output',list(c.paths("G11","DFF_1.D")))
         
-        temp.append(closestDFFin(node,DFFinList,circuitIn))
-        temp.append(closestDFFout(node,DFFoutList,circuitIn))
-        temp.append(closestInput(node,circuitIn,DFFList))
-        temp.append(closestOutput(node,circuitIn,DFFList))
+    #     temp.append(closestDFFin(node,DFFinList,circuitIn))
+    #     temp.append(closestDFFout(node,DFFoutList,circuitIn))
+    #     temp.append(closestInput(node,circuitIn,DFFList))
+    #     temp.append(closestOutput(node,circuitIn,DFFList))
         
-        if (len(DFFList) <= 0):
-            temp.append(cg.props.signal_probability(circuitIn,node,False))
-        else:
-            if (node in circuitIn2.nodes()):
-                temp.append(cg.props.signal_probability(circuitIn2,node,False))
-            else:
-                temp.append(-1)
-        temp.append(9)
+    #     if (len(DFFList) <= 0):
+    #         temp.append(cg.props.signal_probability(circuitIn,node,False))
+    #     else:
+    #         if (node in circuitIn2.nodes()):
+    #             temp.append(cg.props.signal_probability(circuitIn2,node,False))
+    #         else:
+    #             temp.append(-1)
+    #     temp.append(9)
 
 
-        df[node] = temp
+    #     df[node] = temp
 
     #print(df)
     #print(df.T)
-    df = df.T
-    df.to_csv(path_or_buf='./parsed_nets/' + file_name + '.csv', sep=',') #put the data frame into a csv file, comma delim value
+    # df = df.T
+    # df.to_csv(path_or_buf='./parsed_nets/' + file_name + '.csv', sep=',') #put the data frame into a csv file, comma delim value
 
     return
 
@@ -211,7 +269,7 @@ def closestOutput(node,circuit,dfflist):
         possibleoutPaths = []
         minInputPath = []
         for output in outputs:
-            for othernode in c.nodes():
+            for othernode in circuit.nodes():
                 if (len(list(circuit.paths(othernode,node))) > 0 and (len(list(circuit.paths(othernode,output))) > 0)):
                     possibleoutPaths.append(list(set(min(circuit.paths(othernode,node))).union( set(min(circuit.paths(othernode,output))))))
                 if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
@@ -236,7 +294,7 @@ def closestOutput(node,circuit,dfflist):
                 if (len(list(circuit.paths(node,dffPort))) > 0) and ".D" in dffPort:
                     minInputPath.append(min(list(circuit.paths(node,dffPort))))
                 if (".Q" in dffPort):
-                    for othernode in c.nodes():
+                    for othernode in circuit.nodes():
                         if (len(list(circuit.paths(dffPort,output))) > 0):
                             possibleoutPaths.append(min(list(circuit.paths(dffPort,output))))
             if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
@@ -295,7 +353,7 @@ def closestInput(node,circuit,dfflist):
                     inputthatwon = input
                     distance = minLength
                     pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
-    print("node:",node,"winning Input: ",inputthatwon,"len: ", distance, "path: ", pathwin)
+    # print("node:",node,"winning Input: ",inputthatwon,"len: ", distance, "path: ", pathwin)
     return distance
 
 
@@ -305,8 +363,8 @@ dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
 path = 'benchmarks/'
 # path += v_file
 
-files = ["s420","s641","s713","s1238","c482","c1980","c6288"]
-
+# files = ["s420","s641","s713","s1238","c482","c1980","c6288"]
+files = ["s27"]
 
 
 def featureDriver(prepathName):
@@ -318,10 +376,11 @@ def featureDriver(prepathName):
     c = cg.from_file(filepath + '.v', blackboxes=dff)
     extractFeatures(c,prepathName,dff)
 
-if __name__ == '__main__':
-    pool = mp.Pool()
-    pool = mp.Pool(mp.cpu_count()-2)
-    outputs = pool.map(featureDriver,files)
+for file in files:
+    featureDriver(file)
+
+
+
 
 
 print("finished")
