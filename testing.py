@@ -81,49 +81,6 @@ def extractFeatures(circuitIn, file_name, blackboxIn):
         df.to_csv(path_or_buf='./parsed_nets/' + file_name + '.csv', sep=',') #put the data frame into a csv file, comma delim value
         pool.close()
         pool.join()
-    
-    # for node in nodes:
-    #     temp = []
-    #     print('node',node,file_name)
-    #     #print(node)
-        
-    #     fanInVals = getFanIn(node, circuitIn)
-    #     temp.append(fanInVals[0]) #append fanInL1
-    #     temp.append(fanInVals[1]) #append fanInL2
-    #     fanOutVals = getFanOut(node, circuitIn)
-    #     temp.append(fanOutVals[0]) #append fanOutL1
-    #     temp.append(fanOutVals[1]) #append fanOutL2
-
-    #     DFFinList = list(filter(isDFFin,circuitIn.nodes()))
-    #     DFFoutList = list(filter(isDFFout,circuitIn.nodes()))
-    #     DFFList = list(filter(isDFFatall,circuitIn.nodes()))
-
-    #     sortDFFs(DFFList)
-    #     # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-    #     # print('paths for output',list(c.paths("G11","DFF_1.D")))
-        
-    #     temp.append(closestDFFin(node,DFFinList,circuitIn))
-    #     temp.append(closestDFFout(node,DFFoutList,circuitIn))
-    #     temp.append(closestInput(node,circuitIn,DFFList))
-    #     temp.append(closestOutput(node,circuitIn,DFFList))
-        
-    #     if (len(DFFList) <= 0):
-    #         temp.append(cg.props.signal_probability(circuitIn,node,False))
-    #     else:
-    #         if (node in circuitIn2.nodes()):
-    #             temp.append(cg.props.signal_probability(circuitIn2,node,False))
-    #         else:
-    #             temp.append(-1)
-    #     temp.append(9)
-
-
-    #     df[node] = temp
-
-    #print(df)
-    #print(df.T)
-    # df = df.T
-    # df.to_csv(path_or_buf='./parsed_nets/' + file_name + '.csv', sep=',') #put the data frame into a csv file, comma delim value
-
     return
 
 
