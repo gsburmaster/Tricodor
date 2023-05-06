@@ -19,6 +19,8 @@ def extractFeatures(circuitIn, file_name, blackboxIn):
     NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
     print(NoBBtext)
     circuitIn2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,blackboxIn)
+    nodeArr = []
+    dataArr = []
     for node in nodes:
         temp = []
 
@@ -52,13 +54,13 @@ def extractFeatures(circuitIn, file_name, blackboxIn):
             else:
                 temp.append(-1)
         temp.append(9)
-
-
-        df[node] = temp
+        nodeArr.append(node)
+        dataArr.append(temp)
+        
 
     #print(df)
     #print(df.T)
-    df = df.T
+    df = pd.DataFrame(dataArr,index=nodeArr,columns=features)
     df.to_csv(path_or_buf='./parsed_nets/' + v_file + '.csv', sep=',') #put the data frame into a csv file, comma delim value
 
     return
