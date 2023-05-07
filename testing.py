@@ -27,9 +27,12 @@ def multithreadedNodes(node,inputArr): #[circuitIn,circuitIn2,file_name,nodes]
     
     temp.append(closestDFFin(node,DFFinList,inputArr[0]))
     temp.append(closestDFFout(node,DFFoutList,inputArr[0]))
-    temp.append(closestInput(node,inputArr[0],DFFList))
-    temp.append(closestOutput(node,inputArr[0],DFFList))
-    
+    if (node in inputArr[1].nodes()):
+        temp.append(closestInput(node,inputArr[1],[]))
+        temp.append(closestOutput(node,inputArr[1],[]))
+    else:
+        temp.append(-1)
+        temp.append(-1)
     if (len(DFFList) <= 0):
         temp.append(cg.props.signal_probability(inputArr[0],node,False))
     else:
@@ -42,33 +45,32 @@ def multithreadedNodes(node,inputArr): #[circuitIn,circuitIn2,file_name,nodes]
 
 
 def extractFeatures(circuitIn, file_name, blackboxIn):
-    features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Static Probability","(broken)Observability"]
-    print('runnning with',file_name)
-    nodes = circuitIn.topo_sort()
     
-    filepath = "benchmarks/"
-    if ("c" in file_name):
-        filepath += "labeled_nets/"
-    file = open(filepath + file_name + ".v","r")
-    BBtext = file.read() # for some reason this is the way that this works
-    file.close()
-    NoBBtext = re.sub(r"dff (\w+)\(\.CK\((\w+)\),\.Q\((\w+)\),\.D\((\w+)\)\);",r"buf \1(\3,\4);",BBtext)
-    NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
-    # print(NoBBtext)
-    circuitIn2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,blackboxIn)
-
-    inputArrForFunction = [circuitIn,circuitIn2,file_name]
-    thingtoadd = []
-    for node in nodes:
-        thingtoadd.append(inputArrForFunction)
-    # print(thingtoadd, "thing to add")
-    nodeList = list(circuitIn.nodes())
-    # print(list(nodeList),"nodes")
-    nodeArgArr = []
-    for node in nodeList:
-        nodeArgArr.append((node,inputArrForFunction))
     
     if __name__ == '__main__':
+        features=["FanIn L1", "FanIn L2", "FanOut L1", "FanOut L2","Closest DFF In","Closest DFF Out","Closest PI","Closest PO","Static Probability","(broken)Observability"]
+        print('runnning with',file_name)
+        nodes = circuitIn.topo_sort()
+        filepath = "benchmarks/"
+        if ("c" in file_name):
+            filepath += "labeled_nets/"
+        file = open(filepath + file_name + ".v","r")
+        BBtext = file.read() # for some reason this is the way that this works
+        file.close()
+        NoBBtext = re.sub(r"dff (\w+)\(\.CK\((\w+)\),\.Q\((\w+)\),\.D\((\w+)\)\);",r"buf \1(\3,\4);",BBtext)
+        NoBBtext = re.sub(r"module dff(.|\n)+endmodule(\n)+module","module",NoBBtext)
+        # print(NoBBtext)
+        circuitIn2 = cg.parsing.verilog.parse_verilog_netlist(NoBBtext,blackboxIn)
+        inputArrForFunction = [circuitIn,circuitIn2,file_name]
+        thingtoadd = []
+        for node in nodes:
+            thingtoadd.append(inputArrForFunction)
+        # print(thingtoadd, "thing to add")
+        nodeList = list(circuitIn.nodes())
+        # print(list(nodeList),"nodes")
+        nodeArgArr = []
+        for node in nodeList:
+            nodeArgArr.append((node,inputArrForFunction))
         pool = mp.Pool(mp.cpu_count()-2)
         outputs = pool.starmap(multithreadedNodes,nodeArgArr)
         print(outputs)
@@ -246,6 +248,7 @@ def closestOutput(node,circuit,dfflist):
                 pathwin= path
         dffFinalStack = []
         for dffArr in dffsortedlist:
+            print('uh oh')
             minInputPath = []
             possibleoutPaths = []
             for dffPort in dffArr: #now we have min path to dff
@@ -321,7 +324,6 @@ dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
 path = 'benchmarks/'
 # path += v_file
 
-files = ["s27","s420","s641","s713","s1238","c482","c1980","c6288"]
 # files = ["s27"]
 
 
@@ -340,8 +342,8 @@ for file in files:
 
 
 
-
-print("finished")
+if __name__ == "__main__":
+    print("finished")
 # try:
 #     c = cg.from_file(path + '.v', blackboxes=dff)
 #     extractFeatures(c,path)
