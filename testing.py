@@ -6,43 +6,49 @@ import pdb
 
 
 def multithreadedNodes(node,inputArr): #[circuitIn,circuitIn2,file_name,nodes]
-    temp = []
-    print('node',node,inputArr[2])
-    #print(node)
-    
-    fanInVals = getFanIn(node, inputArr[0])
-    temp.append(fanInVals[0]) #append fanInL1
-    temp.append(fanInVals[1]) #append fanInL2
-    fanOutVals = getFanOut(node, inputArr[0])
-    temp.append(fanOutVals[0]) #append fanOutL1
-    temp.append(fanOutVals[1]) #append fanOutL2
+    try:
+        temp = []
+        print('node',node,inputArr[2])
+        #print(node)
+        
+        fanInVals = getFanIn(node, inputArr[0])
+        temp.append(fanInVals[0]) #append fanInL1
+        temp.append(fanInVals[1]) #append fanInL2
+        fanOutVals = getFanOut(node, inputArr[0])
+        temp.append(fanOutVals[0]) #append fanOutL1
+        temp.append(fanOutVals[1]) #append fanOutL2
+        print('finished fanin/out, ',node)
+        # DFFinList = list(filter(isDFFin,inputArr[0].nodes()))
+        # DFFoutList = list(filter(isDFFout,inputArr[0].nodes()))
+        DFFList = list(filter(isDFFatall,inputArr[0].nodes()))
 
-    DFFinList = list(filter(isDFFin,inputArr[0].nodes()))
-    DFFoutList = list(filter(isDFFout,inputArr[0].nodes()))
-    DFFList = list(filter(isDFFatall,inputArr[0].nodes()))
-
-    sortDFFs(DFFList)
-    # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
-    # print('paths for output',list(c.paths("G11","DFF_1.D")))
-    
-    temp.append(closestDFFin(node,DFFinList,inputArr[0]))
-    temp.append(closestDFFout(node,DFFoutList,inputArr[0]))
-    if (node in inputArr[1].nodes()):
-        temp.append(closestInput(node,inputArr[1],[]))
-        temp.append(closestOutput(node,inputArr[1],[]))
-    else:
+        # sortDFFs(DFFList)
+        # print(cg.props.avg_sensitivity(cg.tx.strip_blackboxes(c),"G5"))
+        # print('paths for output',list(c.paths("G11","DFF_1.D")))
+        
+        # temp.append(closestDFFin(node,DFFinList,inputArr[0]))
+        # temp.append(closestDFFout(node,DFFoutList,inputArr[0]))
         temp.append(-1)
         temp.append(-1)
-    if (len(DFFList) <= 0):
-        temp.append(cg.props.signal_probability(inputArr[0],node,False))
-    else:
         if (node in inputArr[1].nodes()):
-            temp.append(cg.props.signal_probability(inputArr[1],node,False))
+            temp.append(closestInput(node,inputArr[1],[]))
+            temp.append(closestOutput(node,inputArr[1],[]))
         else:
             temp.append(-1)
-    temp.append(9)
-    return [temp,node]
-
+            temp.append(-1)
+        if (len(DFFList) <= 0):
+            temp.append(cg.props.signal_probability(inputArr[0],node,False))
+        else:
+            if (node in inputArr[1].nodes()):
+                temp.append(cg.props.signal_probability(inputArr[1],node,False))
+            else:
+                temp.append(-1)
+        temp.append(9)
+        print("finished node",node)
+        return [temp,node]
+    except:
+        print('error run into')
+        return [[],node]
 
 def extractFeatures(circuitIn, file_name, blackboxIn):
     
@@ -140,7 +146,6 @@ def isDFFatall(input):
     return False
 def isDFFin(input):
     if ".D" in input:
-        # print(input)
         return True
     return False
 def isDFFout(input):
@@ -150,7 +155,6 @@ def isDFFout(input):
 
 #https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/#
 def closestDFFin(node,DFFinList,circuit):
-    # print('about to print dfflist')
     distance = -1
     if ('.D' in node):
         distance = 0
@@ -216,8 +220,10 @@ def closestDFFout(node,DFFinList,circuit):
     return distance
 
 def closestOutput(node,circuit,dfflist):
+    print('running closest output',node)
     dffsortedlist = sortDFFs(dfflist)
     outputs = list(circuit.outputs())
+    print("number of outputs for node" ,node, "is ", len(outputs))
     distance = -1
     outputthatwon = ""
     pathwin = []
@@ -226,6 +232,7 @@ def closestOutput(node,circuit,dfflist):
         outputthatwon = node
         pathwin = [node]
     if (node in dfflist):
+        print('hey you should never see this')
         possibleoutPaths = []
         minInputPath = []
         for output in outputs:
@@ -246,31 +253,33 @@ def closestOutput(node,circuit,dfflist):
                 distance = len(path)
                 outputthatwon = output
                 pathwin= path
-        dffFinalStack = []
-        for dffArr in dffsortedlist:
-            print('uh oh')
-            minInputPath = []
-            possibleoutPaths = []
-            for dffPort in dffArr: #now we have min path to dff
-                if (len(list(circuit.paths(node,dffPort))) > 0) and ".D" in dffPort:
-                    minInputPath.append(min(list(circuit.paths(node,dffPort))))
-                if (".Q" in dffPort):
-                    for othernode in circuit.nodes():
-                        if (len(list(circuit.paths(dffPort,output))) > 0):
-                            possibleoutPaths.append(min(list(circuit.paths(dffPort,output))))
-            if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
-                minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
-                if ((minLength < distance) or distance == -1) and minLength > 0:
-                    outputthatwon = output
-                    distance = minLength
-                    pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
+        # dffFinalStack = []
+        # for dffArr in dffsortedlist:
+        #     print('uh oh')
+        #     minInputPath = []
+        #     possibleoutPaths = []
+        #     for dffPort in dffArr: #now we have min path to dff
+        #         if (len(list(circuit.paths(node,dffPort))) > 0) and ".D" in dffPort:
+        #             minInputPath.append(min(list(circuit.paths(node,dffPort))))
+        #         if (".Q" in dffPort):
+        #             for othernode in circuit.nodes():
+        #                 if (len(list(circuit.paths(dffPort,output))) > 0):
+        #                     possibleoutPaths.append(min(list(circuit.paths(dffPort,output))))
+        #     if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
+        #         minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
+        #         if ((minLength < distance) or distance == -1) and minLength > 0:
+        #             outputthatwon = output
+        #             distance = minLength
+        #             pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
     # print("node:",node,"winning output: ",outputthatwon,"len: ", distance, "path: ", pathwin)
     return distance
 
 
 def closestInput(node,circuit,dfflist):
+    print("running closest input", node)
     dffsortedlist = sortDFFs(dfflist)
     inputs = list(circuit.inputs())
+    print("number of inputs for node" ,node, "is ", len(inputs))
     distance = -1
     inputthatwon = ""
     pathwin = []
@@ -295,25 +304,25 @@ def closestInput(node,circuit,dfflist):
                 distance = len(path)
                 inputthatwon = input
                 pathwin= path
-        dffFinalStack = []
-        for dffArr in dffsortedlist:
-            minInputPath = []
-            possibleoutPaths = []
-            for dffPort in dffArr: #now we have min path to dff
-                if (len(list(circuit.paths(input,dffPort))) > 0):
-                    minInputPath.append(min(list(circuit.paths(input,dffPort))))
-            for dffPort in dffArr:
-                if(len(list(circuit.paths(node,dffPort))) > 0):
-                    possibleoutPaths.append(min(list(circuit.paths(node,dffPort) ) ) )
-                for othernode in circuit.nodes():
-                    if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dffPort))) > 0)):
-                        possibleoutPaths.append(list(set(min(circuit.paths(othernode,node))).union( set(min(circuit.paths(othernode,dffPort))))))
-            if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
-                minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
-                if ((minLength < distance) or distance == -1) and minLength > 0:
-                    inputthatwon = input
-                    distance = minLength
-                    pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
+        # dffFinalStack = []
+        # for dffArr in dffsortedlist:
+        #     minInputPath = []
+        #     possibleoutPaths = []
+        #     for dffPort in dffArr: #now we have min path to dff
+        #         if (len(list(circuit.paths(input,dffPort))) > 0):
+        #             minInputPath.append(min(list(circuit.paths(input,dffPort))))
+        #     for dffPort in dffArr:
+        #         if(len(list(circuit.paths(node,dffPort))) > 0):
+        #             possibleoutPaths.append(min(list(circuit.paths(node,dffPort) ) ) )
+        #         for othernode in circuit.nodes():
+        #             if ((len(list(circuit.paths(othernode,node))) > 0) and (len(list(circuit.paths(othernode,dffPort))) > 0)):
+        #                 possibleoutPaths.append(list(set(min(circuit.paths(othernode,node))).union( set(min(circuit.paths(othernode,dffPort))))))
+        #     if (len(minInputPath) > 0 and len(possibleoutPaths) > 0):
+        #         minLength =( len(min(minInputPath)) + len(min(possibleoutPaths)) ) -2
+        #         if ((minLength < distance) or distance == -1) and minLength > 0:
+        #             inputthatwon = input
+        #             distance = minLength
+        #             pathwin = list(set(min(minInputPath)).union(set(min(possibleoutPaths))))
     # print("node:",node,"winning Input: ",inputthatwon,"len: ", distance, "path: ", pathwin)
     return distance
 
@@ -324,6 +333,7 @@ dff = [cg.BlackBox("dff", ["CK", "D"], ["Q"])]
 path = 'benchmarks/'
 # path += v_file
 
+files = ["s27","c482","s420","s641","s713","s1238","c1980","c6288"]
 # files = ["s27"]
 
 
