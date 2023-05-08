@@ -2,6 +2,11 @@ from numpy import genfromtxt
 import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+import plotly.express as px
+import pandas as pd
+
+import glob
+import os
 
 
 '''
@@ -10,8 +15,37 @@ bring in all csvs of the labeled nets, cluster them, manually analyze the cluste
 maybe scatter plot with matplot if you have time
 '''
 
-net_csvs = ['s27.csv','s382.csv','s420.csv','s641.csv','s713.csv','s1238.csv']
-Xs = np.empty((1,10))
+def gen_elbow(values):
+    wcss = []
+
+    for k in range(1,21):
+        km = KMeans(n_clusters=k, random_state=42, max_iter=5000, init = 'k-means++')
+        km.fit(values)
+        wcss.append(km.inertia_)
+
+    wcss = pd.DataFrame(wcss, columns=['Value'])
+    wcss.index += 1
+
+    plot = px.line(wcss)
+    plot.update_layout(
+        title={'text': "Within Cluster Sum of Squares or 'Elbow Chart'",
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'x': 0.5},
+        xaxis_title='Clusters',
+        yaxis_title='WCSS')
+    plot.update_layout(showlegend=False)
+    plot.show()
+
+net_csvs = ['s27.csv','s382.csv','s420.csv','s641.csv']
+Xs = np.empty((1,9))
+
+
+path = 'parsed_nets/real/'
+all_files = glob.glob(os.path.join(path, "*.csv"))
+df = pd.concat((pd.read_csv(f) for f in all_files), ignore_index=True)
+
+print(df)
 
 for csv in net_csvs:
     X = genfromtxt('parsed_nets/' + csv, delimiter=',')
@@ -31,11 +65,38 @@ Xs = np.delete(Xs, (0), axis=0)
 
 print(Xs)
 
-km = KMeans(n_clusters=3, init='k-means++', n_init=10, random_state=0).fit(Xs)
+#gen_elbow(Xs)
 
-print(np.shape(Xs))
-print(len(km.labels_))
+km = KMeans(n_clusters=6, random_state=42, max_iter=5000, init = 'k-means++')
+clusters = km.fit_predict(Xs)
 
+labels = pd.DataFrame({'Cluster': clusters})
+labeledDF = pd.concat((df, labels), axis=1)
+labeledDF['Cluster'] = labeledDF['Cluster'].astype(str)
+
+u_labels = np.unique(clusters)
+ 
+for i in u_labels:
+    plt.scatter(df[clusters == i , 'FanIn L1'] , df[clusters == i , 'FanOut L1'] , label = i)
+plt.legend()
+plt.show()
+
+'''
+plot = px.scatter(labeledDF, color="Cluster")
+plot.update_yaxes(categoryorder='category ascending')
+plot.update_layout(
+    title={'text': "Clustered Data",
+           'xanchor': 'center',
+           'yanchor': 'top',
+           'x': 0.5})
+plot.show()
+'''
+
+
+#print(np.shape(Xs))
+#print(len(km.labels_))
+
+'''
 labeled_csvs = ['c482.csv','c1980.csv','c6288.csv']
 Ys = np.empty((1,10))
 
@@ -92,3 +153,4 @@ for net in Zs:
 
 print("False pos: " + str(FP))
 print("False neg: " + str(FN))
+'''
